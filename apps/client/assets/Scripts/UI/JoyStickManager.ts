@@ -23,6 +23,7 @@ export class JoyStickManager extends Component {
 
     onDestroy() {
         input.off(Input.EventType.TOUCH_START, this.onTouchStart, this);
+        input.off(Input.EventType.TOUCH_MOVE, this.onTouchMove, this);
         input.off(Input.EventType.TOUCH_END, this.onTouchEnd, this);
     }
 

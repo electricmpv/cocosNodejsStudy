@@ -24,7 +24,8 @@ export default class State {
     const track = new animation.ObjectTrack();
     track.path = new animation.TrackPath().toComponent(Sprite).toProperty("spriteFrame");
     const spriteFrames = DataManager.Instance.textureMap.get(this.path);
-    const frames: Array<[number, SpriteFrame]> = sortSpriteFrame(spriteFrames).map((item, index) => [index * ANIMATION_SPEED, item]);
+    const frames: Array<[number, SpriteFrame]> = sortSpriteFrame(spriteFrames).map((item, index) => [
+      index * ANIMATION_SPEED, item]);
     track.channel.curve.assignSorted(frames);
 
     //动画添加轨道

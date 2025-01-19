@@ -7,5 +7,7 @@ export enum InputTypeEnum{
 
 export enum EntityTypeEnum {
   Actor1 = 'Actor1',
+  Actor2 = 'Actor2',
+  Map = 'Map',
   
 }

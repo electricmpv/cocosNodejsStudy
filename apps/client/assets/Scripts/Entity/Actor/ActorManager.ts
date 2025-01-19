@@ -12,7 +12,7 @@ export class ActorManager extends Component {
       
     }
 
-    update(dt){
+    tick(dt){
       if(DataManager.Instance.jm.input.length() ){
         const{x,y} = DataManager.Instance.jm.input;
         DataManager.Instance.applyInput({
@@ -25,7 +25,11 @@ export class ActorManager extends Component {
       }
     }
     render(data:IActor){
-      this.node.setPosition(data.position.x,data.position.y);
+      const {direction,position} = data;
+      this.node.setPosition(position.x,position.y);
+      if(direction.x !==0){
+        this.node.setScale(direction.x > 0 ? 1 : -1,1,1);
+      }
     }
 
 }
