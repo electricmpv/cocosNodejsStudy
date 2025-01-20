@@ -1,10 +1,12 @@
-import { _decorator, Component, EventTouch, Input, input, instantiate, Node, Prefab, UITransform, Vec2 } from 'cc';
+import { _decorator, Component, EventTouch, Input, input, instantiate, Node, Prefab, SpriteFrame, UITransform, Vec2 } from 'cc';
 import DataManager from '../Global/DataManager';
 import { JoyStickManager } from '../UI/JoyStickManager';
 import { ResourceManager } from '../Global/ResourceManager';
 import { ActorManager } from '../Entity/Actor/ActorManager';
-import { PrefabPathEnum } from '../Enum';
-import { EntityTypeEnum } from '../Common';
+import { PrefabPathEnum, TexturePathEnum } from '../Enum';
+import { EntityTypeEnum, InputTypeEnum } from '../Common';
+import { BulletManager } from '../Entity/Bullet/BulletManager';
+import { ObjectPoolManager } from '../Global/ObjectPoolManager';
 const { ccclass, property } = _decorator;
 
 @ccclass('BattleManager')
@@ -15,7 +17,7 @@ private shouldUpdate:boolean = false;
   
 
     onLoad() {
-        this.stage = this.node.getChildByName("Stage");
+        DataManager.Instance.stage = this.stage = this.node.getChildByName("Stage");
         this.ui = this.node.getChildByName("UI");
         this.stage.destroyAllChildren();
         DataManager.Instance.jm =this.ui.getComponentInChildren(JoyStickManager);
@@ -34,6 +36,13 @@ private shouldUpdate:boolean = false;
       )
       list.push(p);
     }
+    for(const type in TexturePathEnum){
+      const p = ResourceManager.Instance.loadDir(TexturePathEnum[type],SpriteFrame).then((spriteFrames)=>{
+        DataManager.Instance.textureMap.set(type,spriteFrames);
+      }
+    )
+    list.push(p);
+  }
       await Promise.all(list);
     }
     initMap(){
@@ -49,6 +58,10 @@ private shouldUpdate:boolean = false;
     }
     tick(dt){
       this.tickActor(dt);
+      DataManager.Instance.applyInput({
+        type:InputTypeEnum.TimePass,
+        dt
+      });  
     }
     tickActor(dt){
       for(const data of DataManager.Instance.state.actors){
@@ -59,6 +72,7 @@ private shouldUpdate:boolean = false;
     }
     render(){
       this.renderActor();
+      this.renderBullet();
     }
     async renderActor(){
       for(const data of DataManager.Instance.state.actors){
@@ -75,6 +89,23 @@ private shouldUpdate:boolean = false;
           am.render(data);
         }
        
+      }
+    }
+   async renderBullet(){
+    if (!DataManager.Instance.prefabMap) {
+      await this.loadRes();
+    }
+      for(const data of DataManager.Instance.state.bullets){
+        const {id,type} = data;
+        let bm = DataManager.Instance.bulletMap.get(id);
+        if(!bm){
+          const bullet = ObjectPoolManager.Instance.get(type);
+          bm = bullet.getComponent(BulletManager)||bullet.addComponent(BulletManager);
+          DataManager.Instance.bulletMap.set(data.id,bm);
+          bm.init(data);
+        }else{
+          bm.render(data);
+        }
       }
     }
 
