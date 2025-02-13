@@ -3,10 +3,13 @@ import DataManager from '../Global/DataManager';
 import { JoyStickManager } from '../UI/JoyStickManager';
 import { ResourceManager } from '../Global/ResourceManager';
 import { ActorManager } from '../Entity/Actor/ActorManager';
-import { PrefabPathEnum, TexturePathEnum } from '../Enum';
-import { EntityTypeEnum, InputTypeEnum } from '../Common';
+import { EventEnum, PrefabPathEnum, TexturePathEnum } from '../Enum';
+import { ApiMsgEnum, EntityTypeEnum, IClientInput, IMsgClientSync, IMsgServerSync, InputTypeEnum } from '../Common';
 import { BulletManager } from '../Entity/Bullet/BulletManager';
 import { ObjectPoolManager } from '../Global/ObjectPoolManager';
+import { NetworkManager } from '../Global/NetworkManager';
+import EventManager from '../Global/EventManager';
+import { deepClone } from '../Utils';
 const { ccclass, property } = _decorator;
 
 @ccclass('BattleManager')
@@ -14,18 +17,50 @@ export class BattleManager extends Component {
 private stage:Node;
 private ui:Node;
 private shouldUpdate:boolean = false;
+private pendingMsg:IMsgClientSync[] = [];
   
 
-    onLoad() {
-        DataManager.Instance.stage = this.stage = this.node.getChildByName("Stage");
-        this.ui = this.node.getChildByName("UI");
-        this.stage.destroyAllChildren();
-        DataManager.Instance.jm =this.ui.getComponentInChildren(JoyStickManager);
-    }
+    onLoad(){}
+
+
     async start(){
-      await this.loadRes();
+      this.clearGame();
+      await Promise.all([
+        this.connectServer(),
+        this.loadRes(),
+      ])
+      
+    
+      // NetworkManager.Instance.listenMsg('diandongmianbao',(data)=>{
+      //   console.log("客户端：收到消息bg！！！",data)
+      // },this)
+      
+     this.initGame();
+    }
+
+    initGame(){
+      DataManager.Instance.jm =this.ui.getComponentInChildren(JoyStickManager);
       this.initMap();
       this.shouldUpdate = true;
+      EventManager.Instance.on(EventEnum.ClientSync,this.handleClientSync,this)
+      NetworkManager.Instance.listenMsg(ApiMsgEnum.MsgServerSync,this.handleServerSync,this)
+      
+
+    }
+
+    clearGame(){
+      EventManager.Instance.off(EventEnum.ClientSync,this.handleClientSync,this);
+      NetworkManager.Instance.unlistenMsg(ApiMsgEnum.MsgServerSync,this.handleServerSync,this);
+      DataManager.Instance.stage = this.stage = this.node.getChildByName("Stage");
+      this.ui = this.node.getChildByName("UI");
+      this.stage.destroyAllChildren();
+      
+    }
+    async connectServer(){
+     if(!(await NetworkManager.Instance.connect().catch(()=>false))){
+      await new Promise((rs)=>setTimeout(rs,1000));
+      await this.connectServer();
+     }
     }
     async loadRes(){
       const list = []
@@ -58,10 +93,10 @@ private shouldUpdate:boolean = false;
     }
     tick(dt){
       this.tickActor(dt);
-      DataManager.Instance.applyInput({
-        type:InputTypeEnum.TimePass,
-        dt
-      });  
+      // DataManager.Instance.applyInput({
+      //   type:InputTypeEnum.TimePass,
+      //   dt
+      // });  
     }
     tickActor(dt){
       for(const data of DataManager.Instance.state.actors){
@@ -108,6 +143,29 @@ private shouldUpdate:boolean = false;
         }
       }
     }
+    handleClientSync(input:IClientInput){
+      const msg = {
+        input,
+        frameId:DataManager.Instance.frameId++
+      }
+      NetworkManager.Instance.sendMsg(ApiMsgEnum.MsgClientSync,msg);
 
+      if(input.type ===InputTypeEnum.ActorMove){
+        DataManager.Instance.applyInput(input);
+        this.pendingMsg.push(msg);
+      }
+    }
+    handleServerSync({inputs,lastFrameId}:IMsgServerSync){
+      DataManager.Instance.state=DataManager.Instance.lastState;
+      for(const input of inputs){
+        DataManager.Instance.applyInput(input);
+      }
+      DataManager.Instance.lastState=deepClone(DataManager.Instance.state);
+      this.pendingMsg = this.pendingMsg.filter((msg)=>msg.frameId >lastFrameId);
+      for(const msg of this.pendingMsg){
+        DataManager.Instance.applyInput(msg.input);
+      }
+    }
 }
+
 

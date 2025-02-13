@@ -1,7 +1,7 @@
 [
   {
     "__type__": "cc.Prefab",
-    "_name": "Actor",
+    "_name": "Actor2",
     "_objFlags": 0,
     "_native": "",
     "data": {
@@ -13,7 +13,7 @@
   },
   {
     "__type__": "cc.Node",
-    "_name": "Actor",
+    "_name": "Actor2",
     "_objFlags": 0,
     "__editorExtras__": {},
     "_parent": null,
@@ -438,7 +438,7 @@
       "a": 255
     },
     "_spriteFrame": {
-      "__uuid__": "f0f5e564-2d98-4de1-bb92-794eeb1acffc@f9941",
+      "__uuid__": "4bcec6e4-8ae3-4dc6-b680-230fb0e5cba1@f9941",
       "__expectedType__": "cc.SpriteFrame"
     },
     "_type": 0,

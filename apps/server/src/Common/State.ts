@@ -22,7 +22,7 @@ export interface IBullet{
   type:EntityTypeEnum;
 }
 
-export interface IState {actors:IActor[],bullets:IBullet[],nextBulletId:number}
+export interface IState {actors:IActor[],bullets:IBullet[],nextBulletId:number,seed:number}
 
 export type IClientInput = IActorMove | IWeaponShoot | ITimePass;
 

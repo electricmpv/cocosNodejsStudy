@@ -5,5 +5,11 @@
   "creator": {
     "version": "3.6.0"
   },
-  "type": "module"
+  "type": "module",
+  "dependencies": {
+    "decimal.js": "^10.5.0"
+  },
+  "devDependencies": {
+    "@types/decimal.js": "^7.4.3"
+  }
 }
